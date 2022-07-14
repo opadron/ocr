@@ -1,0 +1,31 @@
+-- scan-to-pdf pipeline --------------------------------------------------------
+scan - ensure high dpi
+  -> scan.tiff
+
+convert to pages (imagemagick)
+  convert scan.tiff page-%d.tiff
+
+ocr whole image
+  tesseract -c textonly_pdf=1 scan.tiff ocr -l eng
+
+ocr each page
+  num_pages="$( ls -1 page-*.tiff | wc -l )"
+  for i in $( seq $num_pages  ) ; do
+      ii="$((i-1))"
+      tesseract -c textonly_pdf=1 \
+          page-$ii.tiff ocr-$ii -l eng --psm 12 pdf
+  done
+
+merge ocr and images
+  num_pages="$( ls -1 page-*.tiff | wc -l )"
+  for i in $( seq $num_pages  ) ; do
+      ii="$((i-1))"
+      pdftk ocr-$ii.pdf background page-$ii.pdf output merged-$ii.pdf
+  done
+
+unite merged pages
+  num_pages="$( ls -1 page-*.tiff | wc -l )"
+    pdfunite $(
+        for i in $( seq $num_pages ) ; do
+            echo "merged-$((i-1)).pdf"
+        done ) final.pdf
