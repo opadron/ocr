@@ -6,6 +6,8 @@ tmp_dir="$1" ; shift
 
 mkdir -p "$tmp_dir"
 
+set -x
+
 while true ; do
     file="$( find "$queue_dir" -type f -iname '*.tiff' | head -n 1 )"
     if [ -z "$file" ] ; then # nothing to do
